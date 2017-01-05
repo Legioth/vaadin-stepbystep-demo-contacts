@@ -8,7 +8,8 @@ import org.vaadin.stepbystep.person.backend.PersonService;
 
 import com.vaadin.annotations.Theme;
 import com.vaadin.cdi.CDIUI;
-import com.vaadin.data.util.BeanItemContainer;
+import com.vaadin.data.provider.BackEndDataProvider;
+import com.vaadin.data.provider.DataProvider;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.HorizontalSplitPanel;
@@ -28,22 +29,34 @@ import com.vaadin.ui.UI;
 public class ContactsUI extends UI {
 
 	HorizontalSplitPanel splitter = new HorizontalSplitPanel();
-	Grid grid = new Grid();
+	Grid<Person> grid = new Grid<Person>();
 	PersonView editor = new PersonView(this::savePerson, this::deletePerson);
 
 	@Inject
 	PersonService service;
 
 	private void savePerson(Person person) {
-		service.save(person);
+		Person newPerson = service.save(person);
 
-		grid.refreshRows(person);
+		/*
+		 * This causes stale object problems because of a bug / missing feature
+		 * in the framework (but the original version was equally borken).
+		 * 
+		 * There should really be a refresh(T) method in DataProvider so that
+		 * the user doesn't have to deal with DataCommunicator for this kind of
+		 * trivial case.
+		 */
+		grid.getDataCommunicator().refresh(newPerson);
 	}
 
 	private void deletePerson(Person person) {
 		service.delete(person);
 
-		grid.getContainerDataSource().removeItem(person);
+		/*
+		 * Would be nice, but not critical, to have a fine-grained way of
+		 * informing that a single item has been removed.
+		 */
+		grid.getDataProvider().refreshAll();
 
 		selectDefault();
 	}
@@ -53,31 +66,28 @@ public class ContactsUI extends UI {
 		service.loadData();
 
 		grid.addSelectionListener(evt -> {
-			Person selectedItem = (Person) grid.getSelectedRow();
-			if (selectedItem == null) {
+			Person selectedPerson = evt.getFirstSelected().orElse(null);
+			if (selectedPerson == null) {
 				selectDefault();
 			} else {
-				editor.setPerson(selectedItem);
+				editor.setPerson(selectedPerson);
 			}
 		});
 
-		BeanItemContainer<Person> container = new BeanItemContainer<>(Person.class, service.getEntries());
-		grid.setContainerDataSource(container);
+		DataProvider<Person, Void> container = new BackEndDataProvider<>(
+				query -> service.getEntries().stream().skip(query.getOffset()).limit(query.getLimit()),
+				query -> service.getEntries().size());
+		grid.setDataProvider(container);
 
-		grid.setColumns("firstName","lastName","email");		
-		// Can also be:
-		// grid.removeColumn("id");
-		// grid.removeColumn("notes");
-		// grid.removeColumn("dateOfBirth");
-		// grid.removeColumn("picture");
-		// grid.removeColumn("remind");
-		// grid.setColumnOrder("firstName", "lastName", "email");
+		grid.addColumn(Person::getFirstName).setCaption("First name");
+		grid.addColumn(Person::getLastName).setCaption("Last name");
+		grid.addColumn(Person::getEmail).setCaption("Email address");
 
 		selectDefault();
 	}
 
 	public void selectDefault() {
-		grid.select(grid.getContainerDataSource().getIdByIndex(0));
+		grid.getSelectionModel().select(service.getEntries().get(0));
 	}
 
 	@Override
