@@ -38,15 +38,8 @@ public class ContactsUI extends UI {
 	private void savePerson(Person person) {
 		Person newPerson = service.save(person);
 
-		/*
-		 * This causes stale object problems because of a bug / missing feature
-		 * in the framework (but the original version was equally borken).
-		 * 
-		 * There should really be a refresh(T) method in DataProvider so that
-		 * the user doesn't have to deal with DataCommunicator for this kind of
-		 * trivial case.
-		 */
-		grid.getDataCommunicator().refresh(newPerson);
+		editor.setPerson(newPerson);
+		grid.getDataProvider().refreshItem(newPerson);
 	}
 
 	private void deletePerson(Person person) {
@@ -66,7 +59,8 @@ public class ContactsUI extends UI {
 		service.loadData();
 
 		grid.addSelectionListener(evt -> {
-			Person selectedPerson = evt.getFirstSelected().orElse(null);
+			Person selectedPerson = evt.getFirstSelectedItem()
+			        .orElse(null);
 			if (selectedPerson == null) {
 				selectDefault();
 			} else {
@@ -74,7 +68,7 @@ public class ContactsUI extends UI {
 			}
 		});
 
-		DataProvider<Person, Void> container = new BackEndDataProvider<>(
+		DataProvider<Person, Void> container = DataProvider.fromCallbacks(
 				query -> service.getEntries().stream().skip(query.getOffset()).limit(query.getLimit()),
 				query -> service.getEntries().size());
 		grid.setDataProvider(container);

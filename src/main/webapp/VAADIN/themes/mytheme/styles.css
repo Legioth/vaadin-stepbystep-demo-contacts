@@ -316,6 +316,16 @@
  */
 
 @font-face {
+	font-family: "Vaadin-Icons";
+	src: url(../valo/fonts/vaadin-icons/Vaadin-Icons.eot);
+	src: url(../valo/fonts/vaadin-icons/Vaadin-Icons.eot?#iefix) format("embedded-opentype"), url(../valo/fonts/vaadin-icons/Vaadin-Icons.woff) format("woff"), url(../valo/fonts/vaadin-icons/Vaadin-Icons.ttf) format("truetype"), url(../valo/fonts/vaadin-icons/Vaadin-Icons.svg#icomoon) format("svg");
+}
+
+.Vaadin-Icons {
+	font-family: "Vaadin-Icons";
+}
+
+@font-face {
 	font-family: ThemeIcons;
 	font-weight: normal;
 	font-style: normal;
@@ -971,7 +981,7 @@
  */
 
 .v-vaadin-version:after {
-	content: "8.0-SNAPSHOT";
+	content: "8.0.0.rc1";
 }
 
 .v-widget {
@@ -1742,6 +1752,10 @@ div.v-layout.v-horizontal.v-widget {
 	max-height: 10em;
 	overflow: auto;
 	margin-top: 10px;
+}
+
+.mytheme .v-tooltip .v-tooltip-text pre {
+	margin: 0px;
 }
 
 .mytheme .v-tooltip .v-errormessage[aria-hidden="true"] + .v-tooltip-text {
